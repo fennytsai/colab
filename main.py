@@ -1,11 +1,8 @@
 import google.generativeai as genai
 from google.colab import userdata
-import sys
+
+
 import asyncio
-import random
-import discord
-import os
-from discord.ext import commands
 from fastapi import FastAPI
 import uvicorn
 
@@ -22,7 +19,7 @@ async def home_get():
 async def home_head():
     return None  # HEAD 請求依照 HTTP 規範本來就不需要回傳內容，給個空值即可
 
-#紅色部分是為了讓 render (https://dashboard.render.com) 有一個網頁可以連接
+
 
 
 # 讀取金鑰: api_keys 是一個變數,不要加引號
@@ -55,3 +52,26 @@ def diagnose_quota():
 
 
 diagnose_quota()
+
+
+'''
+基本必備
+'''
+async def main():
+    TOKEN = os.getenv("DISCORD_TOKEN")
+    if not TOKEN:
+        print("❌ 錯誤：找不到環境變數 DISCORD_TOKEN")
+        return
+
+    config = uvicorn.Config(app, host="0.0.0.0", port=10000, log_level="info")
+    server = uvicorn.Server(config)
+
+    await asyncio.gather(
+        server.serve(),
+        bot.start(TOKEN)
+    )
+
+if __name__ == "__main__":
+    asyncio.run(main()) 
+
+
