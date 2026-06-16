@@ -1,7 +1,7 @@
 import google.generativeai as genai
 # from google.colab import userdata
 
-
+import os
 import asyncio
 from fastapi import FastAPI
 import uvicorn
