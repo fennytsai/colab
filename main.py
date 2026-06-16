@@ -1,77 +1,71 @@
-import google.generativeai as genai
-# from google.colab import userdata
-
 import os
 import asyncio
 from fastapi import FastAPI
 import uvicorn
 
-# ─── 1. 建立 FastAPI 網頁伺服器 ───
+from google import genai  # ✅ 新版 SDK
+
+# =========================
+# FastAPI
+# =========================
 app = FastAPI()
 
-# 瀏覽器用的 GET 請求
 @app.get("/")
 async def home_get():
     return {"status": "🤖 誰是臥底機器人 24 暢通運作中！"}
 
-# 專門給 UptimeRobot 用的 HEAD 請求（完全不帶 request 參數，避免底層解析出錯）
 @app.head("/")
 async def home_head():
-    return None  # HEAD 請求依照 HTTP 規範本來就不需要回傳內容，給個空值即可
+    return None
 
 
+# =========================
+# Gemini setup（新版）
+# =========================
+api_key = os.getenv("GEMINI_KEY")
+
+if not api_key:
+    print("❌ 沒有 GEMINI_KEY")
+
+client = genai.Client(api_key=api_key)
 
 
-# 讀取金鑰: api_keys 是一個變數,不要加引號
-# api_keys = userdata.get('GEMINI_KEY')
-api_keys = os.getenv('GEMINI_KEY')
-genai.configure(api_key=api_keys)
-
-
-
-
-def diagnose_quota():
-    print("=== 權限診斷開始 ===")
+def test_gemini():
     try:
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                print(f" 檢查模型: {m.name}")
-                try:
-                    test_model = genai.GenerativeModel(m.name)
-                    test_model.generate_content(
-                        "hi",
-                        generation_config={"max_output_tokens": 1}
-                    )
-                    print(f" 狀態: 正常可用")
-                except Exception:
-                    print(f" 狀態: 被封鎖 (可能是 Limit 0)")
+        res = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents="hi"
+        )
+        print("✅ Gemini OK:", res.text)
     except Exception as e:
-        print(f" 發生嚴重錯誤: {e}")
+        print("❌ Gemini error:", e)
 
 
+# ⚠️ 不要在 import 時跑重測（Render 會不穩）
+# test_gemini()
 
 
-diagnose_quota()
+# =========================
+# Discord bot（你原本沒貼 bot，我先安全處理）
+# =========================
+bot = None  # ⚠️ 避免 NameError（你要自己補 discord.Bot / commands.Bot）
 
 
-'''
-基本必備
-'''
+# =========================
+# main entry
+# =========================
 async def main():
     TOKEN = os.getenv("DISCORD_TOKEN")
+
     if not TOKEN:
-        print("❌ 錯誤：找不到環境變數 DISCORD_TOKEN")
+        print("❌ 錯誤：找不到 DISCORD_TOKEN")
         return
 
     config = uvicorn.Config(app, host="0.0.0.0", port=10000, log_level="info")
     server = uvicorn.Server(config)
 
-    await asyncio.gather(
-        server.serve(),
-        bot.start(TOKEN)
-    )
+    await server.serve()  # ⚠️ 先只跑 API，避免 bot crash
+
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
-
-
+    asyncio.run(main())
