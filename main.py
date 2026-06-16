@@ -55,7 +55,7 @@ bot = None  # ⚠️ 避免 NameError（你要自己補 discord.Bot / commands.B
 # main entry
 # =========================
 async def main():
-    TOKEN = os.getenv("DISCORD_TOKEN")
+    TOKEN = os.getenv("GEMINI_KEY")
 
     if not TOKEN:
         print("❌ 錯誤：找不到 DISCORD_TOKEN")
